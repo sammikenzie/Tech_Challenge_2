@@ -1,0 +1,157 @@
+Started by user admin
+[Pipeline] Start of Pipeline
+[Pipeline] node
+Running on Jenkins in /var/lib/jenkins/workspace/EKS-Deployment-Pipeline
+[Pipeline] {
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Clone Repository)
+[Pipeline] git
+The recommended git tool is: NONE
+No credentials specified
+Cloning the remote Git repository
+Cloning repository https://github.com/sammikenzie/terraform-eks.git
+ > git init /var/lib/jenkins/workspace/EKS-Deployment-Pipeline # timeout=10
+Fetching upstream changes from https://github.com/sammikenzie/terraform-eks.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.40.1'
+ > git fetch --tags --force --progress -- https://github.com/sammikenzie/terraform-eks.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git config remote.origin.url https://github.com/sammikenzie/terraform-eks.git # timeout=10
+ > git config --add remote.origin.fetch +refs/heads/*:refs/remotes/origin/* # timeout=10
+Avoid second fetch
+ > git rev-parse refs/remotes/origin/main^{commit} # timeout=10
+Checking out Revision b63d5ff8bbf8a6ef13bb923b10a0c2576c6303e9 (refs/remotes/origin/main)
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f b63d5ff8bbf8a6ef13bb923b10a0c2576c6303e9 # timeout=10
+ > git branch -a -v --no-abbrev # timeout=10
+ > git checkout -b main b63d5ff8bbf8a6ef13bb923b10a0c2576c6303e9 # timeout=10
+Commit message: "Initial commit - add Dockerfile and other project files"
+ > git rev-list --no-walk b63d5ff8bbf8a6ef13bb923b10a0c2576c6303e9 # timeout=10
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Build Docker Image)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] isUnix
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] sh
++ docker build -t hello-world-app:latest .
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 182B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.8-slim
+#2 DONE 0.2s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [1/5] FROM docker.io/library/python:3.8-slim@sha256:4dd2165f119c97c32c1d30b62bbffcd4bbb0b354d6c5522c024406b5b874ac40
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 88.46kB 0.0s done
+#5 DONE 0.0s
+
+#6 [2/5] WORKDIR /app
+#6 CACHED
+
+#7 [3/5] COPY requirements.txt .
+#7 CACHED
+
+#8 [4/5] RUN pip install -r requirements.txt
+#8 CACHED
+
+#9 [5/5] COPY . .
+#9 DONE 0.0s
+
+#10 exporting to image
+#10 exporting layers 0.0s done
+#10 writing image sha256:f86322f10eabd257577cf017f5d09915140fdfde5573a54792f07d22b9f80c9e done
+#10 naming to docker.io/library/hello-world-app:latest done
+#10 DONE 0.0s
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Login to Amazon ECR)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] sh
++ docker login --username AWS --password-stdin 296062590937.dkr.ecr.us-east-2.amazonaws.com
++ aws ecr get-login-password --region us-east-2
+WARNING! Your password will be stored unencrypted in /var/lib/jenkins/.docker/config.json.
+Configure a credential helper to remove this warning. See
+https://docs.docker.com/engine/reference/commandline/login/#credentials-store
+
+Login Succeeded
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Push Docker Image to ECR)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] sh
++ docker tag hello-world-app:latest 296062590937.dkr.ecr.us-east-2.amazonaws.com/hello-world-app:latest
+[Pipeline] sh
++ docker push 296062590937.dkr.ecr.us-east-2.amazonaws.com/hello-world-app:latest
+The push refers to repository [296062590937.dkr.ecr.us-east-2.amazonaws.com/hello-world-app]
+f51ad5d1c4f1: Preparing
+45ddac6dea81: Preparing
+62cf3410e1f8: Preparing
+d258df762ec8: Preparing
+de06647e8a8c: Preparing
+837964438a9e: Preparing
+8ffef0ea5e5c: Preparing
+8e2ab394fabf: Preparing
+837964438a9e: Waiting
+8ffef0ea5e5c: Waiting
+8e2ab394fabf: Waiting
+62cf3410e1f8: Layer already exists
+de06647e8a8c: Layer already exists
+45ddac6dea81: Layer already exists
+d258df762ec8: Layer already exists
+837964438a9e: Layer already exists
+8ffef0ea5e5c: Layer already exists
+8e2ab394fabf: Layer already exists
+f51ad5d1c4f1: Pushed
+latest: digest: sha256:56146a9fff8b712178a1935b0becf9bbc8c8ff2a51b849bf3f52ec4a7f1cd759 size: 1993
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Deploy to Kubernetes)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] sh
++ kubectl set image deployment/hello-world-deployment hello-world=296062590937.dkr.ecr.us-east-2.amazonaws.com/hello-world-app:latest --kubeconfig /var/lib/jenkins/.kube/config
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Declarative: Post Actions)
+[Pipeline] cleanWs
+[WS-CLEANUP] Deleting project workspace...
+[WS-CLEANUP] Deferred wipeout is used...
+[WS-CLEANUP] done
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] End of Pipeline
+Finished: SUCCESS
